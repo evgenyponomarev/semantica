@@ -252,6 +252,25 @@ def test_build_result_with_stats_shows_source_count(runner, monkeypatch):
     assert "3 source(s)" in result.output
 
 
+def test_build_result_empty_knowledge_graph_fails(runner, monkeypatch):
+    """An empty KG result must not be reported as a successful build."""
+    monkeypatch.setattr(
+        cli_module,
+        "_get_framework",
+        lambda _: _MockFramework(
+            {
+                "knowledge_graph": {"entities": [], "relationships": []},
+                "statistics": {"sources_processed": 1},
+            }
+        ),
+    )
+
+    result = runner.invoke(cli_module.main, ["kg", "build", "-s", "src.txt"])
+
+    assert result.exit_code != 0
+    assert "No entities or relationships found" in result.output
+
+
 def test_build_result_without_stats_shows_generic_success(runner, monkeypatch):
     """When build result has no statistics key, generic success message is shown."""
     monkeypatch.setattr(

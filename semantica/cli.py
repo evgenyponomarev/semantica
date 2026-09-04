@@ -307,6 +307,17 @@ def _run_build(cli_ctx: CLIContext, sources: Sequence[str]) -> None:
                 result = framework.build_knowledge_base(sources=[src])
                 progress.advance(task)
 
+    if isinstance(result, dict):
+        knowledge_graph = result.get("knowledge_graph")
+        graph_keys = ("entities", "relationships", "nodes", "edges")
+        if isinstance(knowledge_graph, dict) and any(
+            key in knowledge_graph for key in graph_keys
+        ):
+            if not any(knowledge_graph.get(key) for key in graph_keys):
+                raise click.ClickException(
+                    "No entities or relationships found; knowledge base was not built."
+                )
+
     stats = result.get("statistics", {}) if isinstance(result, dict) else {}
     processed = stats.get("sources_processed")
     if processed is not None:
