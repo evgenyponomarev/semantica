@@ -8,7 +8,7 @@ icon: "plug"
 
 MCP stands for the Model Context Protocol. It is an open standard that allows external AI assistants (like Claude Desktop, Cursor, or Windsurf) to securely access local tools and data sources. 
 
-The Semantica MCP server exposes your knowledge graph as 12 callable tools. By connecting it, any compatible AI client can traverse the graph live, record decisions, run analytics, and export results during a conversation without custom tool wrappers.
+The Semantica MCP server exposes your knowledge graph as 15 callable tools. By connecting it, any compatible AI client can traverse the graph live, record decisions, run analytics, and export results during a conversation without custom tool wrappers.
 
 <Info>
   The Semantica MCP server exposes 15 tools and 3 read-only resources. All tools accept and return JSON. No configuration beyond an optional environment variable for graph persistence is required.
@@ -22,9 +22,9 @@ Instead, the AI client launches `semantica-mcp` locally as a subprocess. All com
 
 ## Why Use MCP With Semantica?
 
-- **Zero-code integration.** Connect Semantica's graph capabilities to your AI IDE or desktop chat app without writing glue code.
-- **Real-time graph updates.** Chat with an AI to extract entities from documents and populate your live knowledge graph.
-- **Auditable AI.** Use the AI to make decisions and automatically record the reasoning and causal chain directly into the graph via Semantica's decision intelligence tools.
+- **Zero-code integration**: connect Semantica's graph capabilities to your AI IDE or desktop chat app without writing glue code.
+- **Real-time graph updates**: chat with an AI to extract entities from documents and populate your live knowledge graph.
+- **Auditable AI**: use the AI to make decisions and automatically record the reasoning and causal chain directly into the graph via Semantica's decision intelligence tools.
 
 ## When To Use / When Not To Use
 
@@ -40,7 +40,7 @@ Connecting your AI client follows a standard progression:
 1. **Install**: Install Semantica in your Python environment.
 2. **Configure Client**: Add the `semantica-mcp` command and absolute graph paths to your AI client's JSON configuration.
 3. **Start Client**: Launch Claude Desktop or Windsurf, which automatically spawns the MCP server.
-4. **Tool Calls**: Prompt the AI in natural language. The AI autonomously chains the 12 available tools.
+4. **Tool Calls**: Prompt the AI in natural language. The AI autonomously chains the 15 available tools.
 5. **Graph Updates**: The AI directly modifies your local graph, adding entities, edges, and decisions.
 
 ---
@@ -229,7 +229,7 @@ Resources expose graph state without a tool call. The client can read them at an
 
 <Tabs>
 
-<Tab title="Defense - CTI/Threat">
+<Tab title="Defense: CTI/Threat">
 
 The CTI team uses Claude Desktop to correlate new OSINT reports against the existing threat graph, record attribution decisions, and query causal chains through natural language, with the graph updated live.
 
@@ -238,29 +238,17 @@ The CTI team uses Claude Desktop to correlate new OSINT reports against the exis
 
 Claude chains automatically:
 
-1. `extract_entities` + `extract_relations` on the report text
-2. `add_entity` for each extracted entity (APT40, CVEs, infrastructure nodes)
-3. `add_relationship` for each extracted relation
-4. `query_decisions(query="APT40 attribution", category="threat_attribution")`
-5. `find_precedents(scenario="APT40 targeting maritime sector", max_results=3)`
-6. `record_decision(category="threat_attribution", outcome="attributed_to_apt40", confidence=0.84, decision_maker="analyst_zhang")`
+1. `extract_entities(text="Mandiant APT40 report text...")`
+2. `add_entity(id="apt40", type="ThreatActor", label="APT40")`
+3. `find_precedents(scenario="APT40 spear-phishing campaign attribution", max_results=3)`
+4. `record_decision(category="attribution", scenario="APT40 campaign matches known TTPs", outcome="attributed_apt40", confidence=0.84, decision_maker="cti_lead_01")`
+5. `export_graph(format="json-ld")`
 
-The attribution is now a graph node linked to the OSINT evidence, searchable by future agents.
-
-```json
-{
-  "category": "threat_attribution",
-  "scenario": "C2 infrastructure overlaps APT40 cluster; TEMP.Periscope TTPs confirmed",
-  "reasoning": "Three C2 IPs match known APT40 hosting ASN; T1190 exploit chain identical to 2023 campaign",
-  "outcome": "attributed_to_apt40",
-  "confidence": 0.84,
-  "decision_maker": "analyst_zhang"
-}
-```
+The analyst has an auditable record of the attribution decision in the graph, linked to its source entities and ready for intelligence sharing.
 
 </Tab>
 
-<Tab title="Security - SOC/Incident">
+<Tab title="Security: SOC/Incident">
 
 During a live incident, the SOC uses Claude to reason over the graph, apply zero-trust policy rules, and record containment decisions with their causal chain, creating a real-time audit trail.
 
@@ -280,7 +268,7 @@ The containment decision and its downstream effects are captured in the graph fo
 
 </Tab>
 
-<Tab title="Life Science - Clinical/Pharma">
+<Tab title="Life Science: Clinical/Pharma">
 
 Clinical AI assistants use the MCP server to record treatment decisions with provenance, retrieve guideline precedents, and export decision graphs for regulatory submission and MDT review.
 
@@ -298,7 +286,7 @@ The graph captures the decision, its guideline basis, and the causal chain. All 
 
 </Tab>
 
-<Tab title="Banking - Risk/Compliance">
+<Tab title="Banking: Risk/Compliance">
 
 Credit risk teams use the MCP server to record every lending decision with its reasoning chain, surface regulatory precedents, and export compliance graphs for Basel III model governance review.
 
@@ -307,7 +295,7 @@ Credit risk teams use the MCP server to record every lending decision with its r
 
 Claude calls:
 
-1. `record_decision(category="mortgage_origination", scenario="LTV 78%, DSTI 38%, credit score 714, first-time buyer", reasoning="LTV within 80% cap; DSTI 38% under stressed rate scenario breaches 35% guideline - conditional approval with LMI requirement", outcome="approved_conditional_lmi", confidence=0.89, decision_maker="credit_model_v3")`
+1. `record_decision(category="mortgage_origination", scenario="LTV 78%, DSTI 38%, credit score 714, first-time buyer", reasoning="LTV within 80% cap; DSTI 38% under stressed rate scenario breaches 35% guideline — conditional approval with LMI requirement", outcome="approved_conditional_lmi", confidence=0.89, decision_maker="credit_model_v3")`
 2. `find_precedents(scenario="mortgage approval borderline DSTI stress test", max_results=3)`
 3. `get_causal_chain(decision_id="...", direction="upstream", max_depth=5)`
 4. `export_graph(format="turtle")` produces the decision provenance graph for model governance committee
@@ -342,8 +330,9 @@ The result is a fully auditable credit decision trail with precedent links, read
 
 ## Related Guides
 
-- [Reasoning & Rules](/guides/reasoning) - the engine behind the `run_reasoning` tool
-- [Decision Intelligence](/guides/decision-intelligence) - how decisions are stored as causal graph nodes
-- [Context Graphs](/guides/context-graphs) - the graph that `add_entity` and `add_relationship` write to
-- [Export & Serialization](/guides/export) - all export formats available via `export_graph`
-- [Ontology Management](/guides/ontology) - generate OWL ontologies from the graph built via MCP
+- [Reasoning & Rules](/guides/reasoning): the engine behind the `run_reasoning` tool
+- [Decision Intelligence](/guides/decision-intelligence): how decisions are stored as causal graph nodes
+- [Context Graphs](/guides/context-graphs): the graph that `add_entity` and `add_relationship` write to
+- [Export & Serialization](/guides/export): all export formats available via `export_graph`
+- [Ontology Management](/guides/ontology): generate OWL ontologies from the graph built via MCP
+
